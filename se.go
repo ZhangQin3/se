@@ -1,3 +1,4 @@
+//// https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol
 package se
 
 import (

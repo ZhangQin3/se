@@ -1,3 +1,4 @@
+// https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol
 package se
 
 import (
@@ -17,8 +18,10 @@ customed package, and maky it easy to write costomed package.
 Due to some package may has "type GwLoginPage struct{ Page }" definition to promote methods of webgui */
 func OpenPage(url string, wd selenium.WebDriver) struct{ Page } {
 	if wd == nil {
-		caps := selenium.Capabilities{"browserName": "firefox", "takesScreenshot": true}
-		wd, _ = selenium.NewRemote(caps, "")
+		//https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
+		caps := selenium.Capabilities{"browserName": "chrome", "takesScreenshot": true} //{android|chrome|firefox|htmlunit|internet explorer|iPhone|iPad|opera|safari}.
+		wd, _ = selenium.NewRemote(caps, "http://localhost:4444/wd/hub")
+		wd.MaximizeWindow("current")
 	}
 	p := Page{webDriver: wd, url: url}
 	p.Open()
