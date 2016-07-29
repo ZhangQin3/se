@@ -20,7 +20,7 @@ func OpenPage(url string, wd selenium.WebDriver) struct{ Page } {
 	if wd == nil {
 		//https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
 		caps := selenium.Capabilities{"browserName": "chrome", "takesScreenshot": true} //{android|chrome|firefox|htmlunit|internet explorer|iPhone|iPad|opera|safari}.
-		wd, _ = selenium.NewRemote(caps, "http://localhost:4444/wd/hub")
+		wd, _ = selenium.NewRemote(caps, "")
 		wd.MaximizeWindow("current")
 	}
 	p := Page{webDriver: wd, url: url}
