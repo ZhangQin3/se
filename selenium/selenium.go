@@ -1,9 +1,5 @@
 package selenium
 
-import (
-	"time"
-)
-
 const (
 	Version = "0.8.1" // Driver version
 )
@@ -132,16 +128,14 @@ type WebDriver interface {
 
 	/* Current session capabilities */
 	Capabilities() (Capabilities, error)
-	/* Set the amount of time, in microseconds, that asynchronous scripts are permitted to run before they are aborted.
 
-	Note that Selenium/WebDriver timeouts are in milliseconds, timeout will be rounded to nearest millisecond.
-	*/
-	SetAsyncScriptTimeout(timeout time.Duration) error
-	/* Set the amount of time, in milliseconds, the driver should wait when searching for elements.
-
-	Note that Selenium/WebDriver timeouts are in milliseconds, timeout will be rounded to nearest millisecond.
-	*/
-	SetImplicitWaitTimeout(timeout time.Duration) error
+	/* Configure the amount of time a particular type of operation can execute for before it is aborted.
+	   Valid types: "script" for script timeouts, "implicit" for modifying the implicit wait timeout and "page load" for setting a page load timeout. */
+	SetTimeout(timeoutType string, ms uint) error
+	/* Set the amount of time, in milliseconds, that asynchronous scripts are permitted to run before they are aborted. */
+	SetAsyncScriptTimeout(ms uint) error
+	/* Set the amount of time, in milliseconds, the driver should wait when searching for elements. */
+	SetImplicitWaitTimeout(ms uint) error
 
 	// IME
 	/* List all available engines on the machine. */
