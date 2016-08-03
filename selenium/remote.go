@@ -12,6 +12,7 @@ import (
 	"gtf/drivers/log"
 	"io/ioutil"
 	"net/http"
+	// "net/http/httputil"
 	"net/url"
 	"regexp"
 	"strings"
@@ -43,7 +44,7 @@ var errors_ = map[int]string{
 const (
 	SUCCESS          = 0
 	DEFAULT_EXECUTOR = "http://127.0.0.1:4444/wd/hub"
-	JSON_TYPE        = "application/json"
+	JSON_MIME_TYPE   = "application/json"
 	MAX_REDIRECTS    = 10
 )
 
@@ -130,16 +131,6 @@ func isMimeType(response *http.Response, mtype string) bool {
 	return false
 }
 
-func newRequest(method string, url string, data []byte) (*http.Request, error) {
-	request, err := http.NewRequest(method, url, bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Add("Accept", JSON_TYPE)
-
-	return request, nil
-}
-
 func cleanNils(buf []byte) {
 	for i, b := range buf {
 		if b == 0 {
@@ -177,25 +168,45 @@ func (wd *remoteWD) requestURL(template string, args ...interface{}) string {
 var reg = regexp.MustCompile(`: {\\"method\\":.+?"screen":.+?}`)
 
 func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
+	// Trace := false
 	debugLog("-> %s, %s", method, url)
 	log.ToggleText("Application json", string(data), "off")
-	request, err := newRequest(method, url, data)
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", JSON_MIME_TYPE)
+	if method == "POST" {
+		req.Header.Add("Content-Type", JSON_MIME_TYPE)
+	}
+
+	// if Trace {
+	// 	if dump, err := httputil.DumpRequest(req, true); err == nil && log != nil {
+	// 		log.Printf("-> TRACE\n%s", dump)
+	// 	}
+	// }
+
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
+	// if Trace {
+	// 	if dump, err := httputil.DumpResponse(res, true); err == nil && log != nil {
+	// 		log.Printf("<- TRACE\n%s", dump)
+	// 	}
+	// }
 
-	buf, err := ioutil.ReadAll(response.Body)
-	debugLog("<- %s, %s", response.Status, response.Header["Content-Type"])
+	buf, err := ioutil.ReadAll(res.Body)
+	debugLog("<- %s, %s", res.Status, res.Header["Content-Type"])
 	log.ToggleText("Application json", string(reg.ReplaceAll(buf, nil)), "off")
 	if err != nil {
-		buf = []byte(response.Status)
+		buf = []byte(res.Status)
 		return nil, errors.New(string(buf))
 	}
+	// if log != nil {
+	// 	log.Printf("<- %s (%s) [%d bytes]", res.Status, res.Header["Content-Type"], len(buf))
+	// }
 
 	reply := new(serverReply)
 	err = json.Unmarshal(buf, reply)
@@ -213,7 +224,7 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 	}
 
 	cleanNils(buf)
-	if response.StatusCode >= 400 {
+	if res.StatusCode >= 400 {
 		message, ok := errors_[reply.Status]
 		if !ok {
 			message = fmt.Sprintf("unknown error - %d", reply.Status)
@@ -221,7 +232,7 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 		return nil, &QueryError{Status: reply.Status, Message: message}
 	}
 
-	if isMimeType(response, JSON_TYPE) {
+	if isMimeType(res, JSON_MIME_TYPE) {
 		if reply.Status != SUCCESS {
 			message, ok := errors_[reply.Status]
 			if !ok {
@@ -236,7 +247,8 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 /* Create new remote client, this will also start a new session.
    capabilities - the desired capabilities, see http://goo.gl/SNlAk
    executor - the URL to the Selenim server, *must* be prefixed with protocol (http,https...).
-              Empty string means DEFAULT_EXECUTOR
+
+   Empty string means DEFAULT_EXECUTOR
 */
 func NewRemote(capabilities Capabilities, executor string) (WebDriver, error) {
 	if len(executor) == 0 {
@@ -908,14 +920,19 @@ func (elem *remoteWE) CSSProperty(name string) (string, error) {
 }
 
 func init() {
-	// http.Client doesn't copy request headers, and selenium requires that
 	httpClient = &http.Client{
+		// WebDriver requires that all requests have an 'Accept: application/json' header. We must add
+		// it here because by default net/http will not include that header when following redirects.
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) > MAX_REDIRECTS {
 				return fmt.Errorf("too many redirects (%d)", len(via))
 			}
-
-			req.Header.Add("Accept", JSON_TYPE)
+			req.Header.Add("Accept", JSON_MIME_TYPE)
+			// if Trace {
+			// 	if dump, err := httputil.DumpRequest(req, true); err == nil && Log != nil {
+			// 		Log.Printf("-> TRACE (redirected request)\n%s", dump)
+			// 	}
+			// }
 			return nil
 		},
 	}
