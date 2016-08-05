@@ -20,6 +20,7 @@ import (
 
 /* Errors returned by Selenium server. */
 var errors_ = map[int]string{
+	0:  "success",
 	7:  "no such element",
 	8:  "no such frame",
 	9:  "unknown command",
@@ -198,15 +199,12 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 	// }
 
 	buf, err := ioutil.ReadAll(res.Body)
-	debugLog("<- %s, %s", res.Status, res.Header["Content-Type"])
-	log.ToggleText("Application json", string(reg.ReplaceAll(buf, nil)), "off")
+	// debugLog("<- %s, %s", res.Status, res.Header["Content-Type"])
+	// log.ToggleText("Application json", string(reg.ReplaceAll(buf, nil)), "off")
 	if err != nil {
 		buf = []byte(res.Status)
 		return nil, errors.New(string(buf))
 	}
-	// if log != nil {
-	// 	log.Printf("<- %s (%s) [%d bytes]", res.Status, res.Header["Content-Type"], len(buf))
-	// }
 
 	reply := new(serverReply)
 	err = json.Unmarshal(buf, reply)
@@ -223,13 +221,15 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 		logScreenShot(&s)
 	}
 
+	state, ok := errors_[reply.Status]
+	if !ok {
+		state = fmt.Sprintf("unknown error - %d", reply.Status)
+	}
+	debugLog("<- %s, %s\n", res.Status, state)
+
 	cleanNils(buf)
 	if res.StatusCode >= 400 {
-		message, ok := errors_[reply.Status]
-		if !ok {
-			message = fmt.Sprintf("unknown error - %d", reply.Status)
-		}
-		return nil, &QueryError{Status: reply.Status, Message: message}
+		return nil, &QueryError{Status: reply.Status, Message: state}
 	}
 
 	if isMimeType(res, JSON_MIME_TYPE) {
