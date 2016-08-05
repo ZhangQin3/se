@@ -221,15 +221,16 @@ func (wd *remoteWD) execute(method, url string, data []byte) ([]byte, error) {
 		logScreenShot(&s)
 	}
 
+	cleanNils(buf)
 	state, ok := errors_[reply.Status]
 	if !ok {
 		state = fmt.Sprintf("unknown error - %d", reply.Status)
 	}
-	debugLog("<- %s, %s\n", res.Status, state)
-
-	cleanNils(buf)
 	if res.StatusCode >= 400 {
+		warningLog("<--- %s, %s\n", res.Status, state)
 		return nil, &QueryError{Status: reply.Status, Message: state}
+	} else {
+		debugLog("<- %s, %s\n", res.Status, state)
 	}
 
 	if isMimeType(res, JSON_MIME_TYPE) {

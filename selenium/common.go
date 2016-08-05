@@ -22,6 +22,14 @@ func debugLog(format string, args ...interface{}) {
 	time.Sleep(10 * time.Microsecond)
 }
 
+func warningLog(format string, args ...interface{}) {
+	if !debugFlag {
+		return
+	}
+	log.Warningf(format+"\n", args...)
+	time.Sleep(10 * time.Microsecond)
+}
+
 type QueryError struct {
 	Status  int
 	Message string

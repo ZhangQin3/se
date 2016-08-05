@@ -17,7 +17,7 @@ type Page struct {
 customed package, and maky it easy to write costomed package.
 Due to some package may has "type GwLoginPage struct{ Page }" definition to promote methods of webgui
 */
-func OpenPage(url string, wd selenium.WebDriver) struct{ Page } {
+func OpenPage(url string, wd selenium.WebDriver) (struct{ Page }, error) {
 	if wd == nil {
 		//https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
 		caps := selenium.Capabilities{"browserName": "chrome", "takesScreenshot": true} //{android|chrome|firefox|htmlunit|internet explorer|iPhone|iPad|opera|safari}.
@@ -30,8 +30,8 @@ func OpenPage(url string, wd selenium.WebDriver) struct{ Page } {
 	// p.webDriver.SetTimeout("script", 100)
 	// p.webDriver.SetTimeout("implicit", 100)
 	p.webDriver.SetTimeout("page load", 15000)
-	p.Open()
-	return struct{ Page }{p}
+	err := p.Open()
+	return struct{ Page }{p}, err
 }
 
 // func genPage(in []interface{}) struct{ Page } {
