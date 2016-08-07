@@ -1,8 +1,8 @@
 package se
 
 import (
+	"gtf/drivers/log"
 	"se/selenium"
-	// "gtf/drivers/log"
 )
 
 /* Click on element */
@@ -17,14 +17,20 @@ func (e *Element) SendKeys(keys string) error {
 	return e.webElement.SendKeys(keys)
 }
 
-/* Set text into element */
-func (e *Element) SetText(text string) error {
-	validateElement(e)
+func PreClear(e *Element) {
 	err := e.Clear()
 	if err != nil {
 		panic(err)
 	}
+}
 
+/* Set text into element */
+func (e *Element) SetText(text string, params ...func(e *Element)) error {
+	validateElement(e)
+	// call functions like PreClear above
+	for _, f := range params {
+		f(e)
+	}
 	return e.webElement.SendKeys(text)
 }
 
@@ -141,6 +147,7 @@ func validateElement(e *Element) {
 	if e.webElement == nil {
 		elem, err := e.page.webDriver.FindElement(elemSelector[e.selStrategy], e.selector)
 		if err != nil {
+			log.Text("panic here", err)
 			panic(err)
 		}
 		e.webElement = elem

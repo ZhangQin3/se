@@ -1,4 +1,5 @@
 // https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol
+// https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
 package se
 
 import (
@@ -17,10 +18,12 @@ type Page struct {
 customed package, and maky it easy to write costomed package.
 Due to some package may has "type GwLoginPage struct{ Page }" definition to promote methods of webgui
 */
-func OpenPage(url string, wd selenium.WebDriver) (struct{ Page }, error) {
+func OpenPage(url string, wd selenium.WebDriver, params ...func(caps map[string]interface{})) (struct{ Page }, error) {
 	if wd == nil {
-		//https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
 		caps := selenium.Capabilities{"browserName": "chrome", "takesScreenshot": true} //{android|chrome|firefox|htmlunit|internet explorer|iPhone|iPad|opera|safari}.
+		for _, f := range params {
+			f(caps)
+		}
 		wd, _ = selenium.NewRemote(caps, "")
 		wd.MaximizeWindow("current")
 	}
@@ -32,6 +35,18 @@ func OpenPage(url string, wd selenium.WebDriver) (struct{ Page }, error) {
 	p.webDriver.SetTimeout("page load", 15000)
 	err := p.Open()
 	return struct{ Page }{p}, err
+}
+
+func Browsername(name string) func(caps map[string]interface{}) {
+	return func(caps map[string]interface{}) {
+		caps["browserName"] = name
+	}
+}
+
+func Screenshot(b bool) func(caps map[string]interface{}) {
+	return func(caps map[string]interface{}) {
+		caps["browserName"] = b
+	}
 }
 
 // func genPage(in []interface{}) struct{ Page } {
