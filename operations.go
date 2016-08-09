@@ -147,8 +147,7 @@ func validateElement(e *Element) {
 	if e.webElement == nil {
 		elem, err := e.page.webDriver.FindElement(elemSelector[e.selStrategy], e.selector)
 		if err != nil {
-			log.Text("panic here", err)
-			panic(err)
+			log.DoPanic(err)
 		}
 		e.webElement = elem
 	}
