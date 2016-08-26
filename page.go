@@ -26,7 +26,7 @@ func OpenPage(url string, wd selenium.WebDriver, params ...func(caps map[string]
 		}
 		wd, err = selenium.NewRemote(caps, "")
 		if err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 
 		wd.MaximizeWindow("current")
